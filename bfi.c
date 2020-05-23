@@ -130,6 +130,7 @@ argcheck(int argc, char** argv)
 static int
 run(unsigned char const* source, size_t source_size)
 {
+    int status = EXIT_SUCCESS;
     size_t* const jumps = xalloc(NULL, source_size * sizeof(size_t));
     size_t* const lines = xalloc(NULL, source_size * sizeof(size_t));
     memset(jumps, 0x00, source_size * sizeof(size_t));
@@ -152,7 +153,8 @@ run(unsigned char const* source, size_t source_size)
             if (stack_count == 0) {
                 errorf(
                     "[line %zu] Unbalanced right square bracket ']' ...", line);
-                return EXIT_FAILURE;
+                status = EXIT_FAILURE;
+                goto end;
             }
             stack_count -= 1;
             jumps[stack[stack_count]] = i;
@@ -166,7 +168,8 @@ run(unsigned char const* source, size_t source_size)
             lines[stack[i]]);
     }
     if (stack_count != 0) {
-        return EXIT_FAILURE;
+        status = EXIT_FAILURE;
+        goto end;
     }
 
     size_t cell_idx = 0;
@@ -182,14 +185,16 @@ run(unsigned char const* source, size_t source_size)
         case '>':
             if (cell_idx == (CELL_COUNT - 1)) {
                 errorf("[line %zu] '>' Causes cell out of bounds!", lines[pc]);
-                exit(EXIT_FAILURE);
+                status = EXIT_FAILURE;
+                goto end;
             }
             cell_idx += 1;
             break;
         case '<':
             if (cell_idx == 0) {
                 errorf("[line %zu] '<' Causes cell out of bounds!", lines[pc]);
-                exit(EXIT_FAILURE);
+                status = EXIT_FAILURE;
+                goto end;
             }
             cell_idx -= 1;
             break;
@@ -212,8 +217,9 @@ run(unsigned char const* source, size_t source_size)
         }
     }
 
+end:
     free(jumps);
     free(lines);
     free(stack);
-    return EXIT_SUCCESS;
+    return status;
 }
