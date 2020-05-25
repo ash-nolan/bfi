@@ -31,7 +31,7 @@ usage(void);
 static void
 argcheck(int argc, char** argv);
 static bool
-prepare(char const* path);
+prepare(void);
 static bool
 execute(void);
 
@@ -39,7 +39,8 @@ int
 main(int argc, char** argv)
 {
     argcheck(argc, argv);
-    int status = prepare(argv[1]) && execute();
+    xslurp(&source, &source_size, argv[1]);
+    int const status = prepare() && execute();
 
     free(source);
     free(lines);
@@ -143,15 +144,13 @@ argcheck(int argc, char** argv)
 }
 
 //= Prepare and Process the Source Code:
-//  (1) Read source code into buffer.
-//  (2) Associate line numbers with each byte of the source.
-//  (3) Build the jump table for left and right square brackets.
+//  (1) Associate line numbers with each byte of the source.
+//  (2) Build the jump table for left and right square brackets.
 static bool
-prepare(char const* path)
+prepare(void)
 {
     bool success = true;
 
-    xslurp(&source, &source_size, path);
     lines = xallocz(NULL, source_size * sizeof(size_t));
     jumps = xallocz(NULL, source_size * sizeof(size_t));
 
