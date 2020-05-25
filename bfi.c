@@ -1,5 +1,6 @@
 #include <errno.h>
 #include <stdarg.h>
+#include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -9,11 +10,19 @@
 
 #define CELL_COUNT 30000
 static uint8_t cells[CELL_COUNT] = {0};
+size_t cell_idx = 0;
+
+size_t source_size = 0;
+unsigned char* source = NULL;
+size_t* lines = NULL;
+size_t* jumps = NULL;
 
 static void
 errorf(char const* fmt, ...);
 static void*
 xalloc(void* ptr, size_t size);
+static void*
+xallocz(void* ptr, size_t size);
 static void
 xslurp(unsigned char** out_buf, size_t* out_buf_size, char const* path);
 
@@ -21,21 +30,21 @@ static void
 usage(void);
 static void
 argcheck(int argc, char** argv);
-static int
-run(unsigned char const* source, size_t source_size);
+static bool
+prepare(char const* path);
+static bool
+execute(void);
 
 int
 main(int argc, char** argv)
 {
-    unsigned char* source = NULL;
-    size_t source_size = 0;
-
     argcheck(argc, argv);
-    xslurp(&source, &source_size, argv[1]);
-    int const status = run(source, source_size);
+    int status = prepare(argv[1]) && execute();
 
     free(source);
-    return status;
+    free(lines);
+    free(jumps);
+    return status ? EXIT_SUCCESS : EXIT_FAILURE;
 }
 
 static void
@@ -61,6 +70,12 @@ xalloc(void* ptr, size_t size)
         exit(EXIT_FAILURE);
     }
     return ptr;
+}
+
+static void*
+xallocz(void* ptr, size_t size)
+{
+    return memset(xalloc(ptr, size), 0x00, size);
 }
 
 static void
@@ -127,56 +142,53 @@ argcheck(int argc, char** argv)
     }
 }
 
-static int
-run(unsigned char const* source, size_t source_size)
+//= Prepare and Process the Source Code:
+//  (1) Read source code into buffer.
+//  (2) Associate line numbers with each byte of the source.
+//  (3) Build the jump table for left and right square brackets.
+static bool
+prepare(char const* path)
 {
-    int status = EXIT_SUCCESS;
+    bool success = true;
 
-    size_t* const lines = xalloc(NULL, source_size * sizeof(size_t));
-    size_t* const jumps = xalloc(NULL, source_size * sizeof(size_t));
-    size_t* const stack = xalloc(NULL, source_size * sizeof(size_t));
+    xslurp(&source, &source_size, path);
+    lines = xallocz(NULL, source_size * sizeof(size_t));
+    jumps = xallocz(NULL, source_size * sizeof(size_t));
+
+    size_t* const stack = xallocz(NULL, source_size * sizeof(size_t));
     size_t stack_count = 0;
-    memset(lines, 0x00, source_size * sizeof(size_t));
-    memset(jumps, 0x00, source_size * sizeof(size_t));
-    memset(stack, 0x00, source_size * sizeof(size_t));
-
-    //= Process the Source Code:
-    //  (1) Associate line numbers with each byte of the source.
-    //  (2) Build the jump table for left and right square brackets.
     size_t line = 1;
     for (size_t i = 0; i < source_size; ++i) {
         lines[i] = line;
-        switch (source[i]) {
-        case '\n':
-            line += 1;
-            break;
-        case '[':
+        line += source[i] == '\n';
+        if (source[i] == '[') {
             stack[stack_count++] = i;
-            break;
-        case ']':
+        }
+        if (source[i] == ']') {
             if (stack_count == 0) {
                 errorf("[line %zu] Unbalanced ']'", line);
-                status = EXIT_FAILURE;
+                success = false;
                 continue;
             }
             stack_count -= 1;
             jumps[stack[stack_count]] = i; // Jump from [ to ]
             jumps[i] = stack[stack_count]; // Jump from ] to [
-            break;
         }
     }
     for (size_t i = 0; i < stack_count; ++i) {
         errorf("[line %zu] Unbalanced '['", lines[stack[i]]);
-        status = EXIT_FAILURE;
-    }
-    if (status != EXIT_SUCCESS) {
-        goto end;
+        success = false;
     }
 
-    //= Execute the Source Code.
-    size_t cell_idx = 0;
+    free(stack);
+    return success;
+}
+
+static bool
+execute(void)
+{
+    int c;
     for (size_t pc = 0; pc < source_size; ++pc) {
-        int c;
         switch (source[pc]) {
         case '+':
             cells[cell_idx] += 1;
@@ -187,16 +199,14 @@ run(unsigned char const* source, size_t source_size)
         case '>':
             if (cell_idx == (CELL_COUNT - 1)) {
                 errorf("[line %zu] '>' Causes cell out of bounds", lines[pc]);
-                status = EXIT_FAILURE;
-                goto end;
+                return false;
             }
             cell_idx += 1;
             break;
         case '<':
             if (cell_idx == 0) {
                 errorf("[line %zu] '<' Causes cell out of bounds", lines[pc]);
-                status = EXIT_FAILURE;
-                goto end;
+                return false;
             }
             cell_idx -= 1;
             break;
@@ -219,9 +229,5 @@ run(unsigned char const* source, size_t source_size)
         }
     }
 
-end:
-    free(lines);
-    free(jumps);
-    free(stack);
-    return status;
+    return true;
 }
