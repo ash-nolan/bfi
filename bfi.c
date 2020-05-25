@@ -8,7 +8,7 @@
 #define VERSION "0.0"
 
 #define CELL_COUNT 30000
-uint8_t cells[CELL_COUNT] = {0};
+static uint8_t cells[CELL_COUNT] = {0};
 
 static void
 errorf(char const* fmt, ...);
@@ -131,15 +131,17 @@ static int
 run(unsigned char const* source, size_t source_size)
 {
     int status = EXIT_SUCCESS;
+
     size_t* const jumps = xalloc(NULL, source_size * sizeof(size_t));
     size_t* const lines = xalloc(NULL, source_size * sizeof(size_t));
+    size_t* const stack = xalloc(NULL, source_size * sizeof(size_t));
+    size_t stack_count = 0;
     memset(jumps, 0x00, source_size * sizeof(size_t));
     memset(lines, 0x00, source_size * sizeof(size_t));
-    size_t* const stack = xalloc(NULL, source_size * sizeof(size_t));
     memset(stack, 0x00, source_size * sizeof(size_t));
-    size_t stack_count = 0;
 
-    size_t line = 1; // Current line in the source file.
+    //== Construct the bracket jump table.
+    size_t line = 1;
     for (size_t i = 0; i < source_size; ++i) {
         lines[i] = line;
         switch (source[i]) {
@@ -151,27 +153,25 @@ run(unsigned char const* source, size_t source_size)
             break;
         case ']':
             if (stack_count == 0) {
-                errorf(
-                    "[line %zu] Unbalanced right square bracket ']' ...", line);
+                errorf("[line %zu] Unbalanced ']'", line);
                 status = EXIT_FAILURE;
-                goto end;
+                continue;
             }
             stack_count -= 1;
-            jumps[stack[stack_count]] = i;
-            jumps[i] = stack[stack_count];
+            jumps[stack[stack_count]] = i; // Jump from [ to ]
+            jumps[i] = stack[stack_count]; // Jump from ] to [
             break;
         }
     }
     for (size_t i = 0; i < stack_count; ++i) {
-        errorf(
-            "[line %zu] Unbalanced left square bracket '[' ...",
-            lines[stack[i]]);
-    }
-    if (stack_count != 0) {
+        errorf("[line %zu] Unbalanced '['", lines[stack[i]]);
         status = EXIT_FAILURE;
+    }
+    if (status != EXIT_SUCCESS) {
         goto end;
     }
 
+    //== Execute the source code.
     size_t cell_idx = 0;
     for (size_t pc = 0; pc < source_size; ++pc) {
         int c;
