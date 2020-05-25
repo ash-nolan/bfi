@@ -57,7 +57,7 @@ xalloc(void* ptr, size_t size)
         return NULL;
     }
     if ((ptr = realloc(ptr, size)) == NULL) {
-        errorf("Out of memory!");
+        errorf("Out of memory");
         exit(EXIT_FAILURE);
     }
     return ptr;
@@ -68,7 +68,7 @@ xslurp(unsigned char** out_buf, size_t* out_buf_size, char const* path)
 {
     FILE* const stream = fopen(path, "rb");
     if (stream == NULL) {
-        errorf("%s!", strerror(errno));
+        errorf("%s", strerror(errno));
         exit(EXIT_FAILURE);
     }
 
@@ -81,7 +81,7 @@ xslurp(unsigned char** out_buf, size_t* out_buf_size, char const* path)
         buf[size++] = (unsigned char)c;
     }
     if (!feof(stream) || ferror(stream)) {
-        errorf("Failed to slurp file '%s'!", path);
+        errorf("Failed to slurp file '%s'", path);
         exit(EXIT_FAILURE);
     }
 
@@ -122,7 +122,7 @@ argcheck(int argc, char** argv)
     }
 
     if (argc > 2) {
-        errorf("More than one file provided!");
+        errorf("More than one file provided");
         exit(EXIT_FAILURE);
     }
 }
@@ -132,15 +132,17 @@ run(unsigned char const* source, size_t source_size)
 {
     int status = EXIT_SUCCESS;
 
-    size_t* const jumps = xalloc(NULL, source_size * sizeof(size_t));
     size_t* const lines = xalloc(NULL, source_size * sizeof(size_t));
+    size_t* const jumps = xalloc(NULL, source_size * sizeof(size_t));
     size_t* const stack = xalloc(NULL, source_size * sizeof(size_t));
     size_t stack_count = 0;
-    memset(jumps, 0x00, source_size * sizeof(size_t));
     memset(lines, 0x00, source_size * sizeof(size_t));
+    memset(jumps, 0x00, source_size * sizeof(size_t));
     memset(stack, 0x00, source_size * sizeof(size_t));
 
-    //== Construct the bracket jump table.
+    //= Process the Source Code:
+    //  (1) Associate line numbers with each byte of the source.
+    //  (2) Build the jump table for left and right square brackets.
     size_t line = 1;
     for (size_t i = 0; i < source_size; ++i) {
         lines[i] = line;
@@ -171,7 +173,7 @@ run(unsigned char const* source, size_t source_size)
         goto end;
     }
 
-    //== Execute the source code.
+    //= Execute the Source Code.
     size_t cell_idx = 0;
     for (size_t pc = 0; pc < source_size; ++pc) {
         int c;
@@ -184,7 +186,7 @@ run(unsigned char const* source, size_t source_size)
             break;
         case '>':
             if (cell_idx == (CELL_COUNT - 1)) {
-                errorf("[line %zu] '>' Causes cell out of bounds!", lines[pc]);
+                errorf("[line %zu] '>' Causes cell out of bounds", lines[pc]);
                 status = EXIT_FAILURE;
                 goto end;
             }
@@ -192,7 +194,7 @@ run(unsigned char const* source, size_t source_size)
             break;
         case '<':
             if (cell_idx == 0) {
-                errorf("[line %zu] '<' Causes cell out of bounds!", lines[pc]);
+                errorf("[line %zu] '<' Causes cell out of bounds", lines[pc]);
                 status = EXIT_FAILURE;
                 goto end;
             }
@@ -218,8 +220,8 @@ run(unsigned char const* source, size_t source_size)
     }
 
 end:
-    free(jumps);
     free(lines);
+    free(jumps);
     free(stack);
     return status;
 }
