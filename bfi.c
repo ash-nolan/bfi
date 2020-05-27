@@ -10,12 +10,15 @@
 
 #define CELL_COUNT 30000
 static uint8_t cells[CELL_COUNT] = {0};
-size_t cell_idx = 0;
+static size_t cell_idx = 0;
 
-size_t source_size = 0;
-unsigned char* source = NULL;
-size_t* lines = NULL;
-size_t* jumps = NULL;
+static char const* path = NULL;
+static bool debug = false;
+
+static size_t source_size = 0;
+static unsigned char* source = NULL;
+static size_t* lines = NULL;
+static size_t* jumps = NULL;
 
 static void
 errorf(char const* fmt, ...);
@@ -39,7 +42,7 @@ int
 main(int argc, char** argv)
 {
     argcheck(argc, argv);
-    xslurp(&source, &source_size, argv[1]);
+    xslurp(&source, &source_size, path);
     int const status = prepare() && execute();
 
     free(source);
@@ -111,9 +114,10 @@ usage(void)
 {
     // clang-format off
     puts(
-        "Usage: bfi FILE"                                          "\n"
-        "  -h, --help       Display usage information and exit."   "\n"
-        "      --version    Display version information and exit."
+        "Usage: bfi FILE"                                            "\n"
+        "  -h, --help       Display usage information and exit."     "\n"
+        "      --version    Display version information and exit."   "\n"
+        "      --debug      Enable the # instruction for debugging."
     );
     // clang-format on
 }
@@ -135,11 +139,21 @@ argcheck(int argc, char** argv)
             puts(VERSION);
             exit(EXIT_SUCCESS);
         }
-    }
 
-    if (argc > 2) {
-        errorf("More than one file provided");
-        exit(EXIT_FAILURE);
+        if (strcmp(argv[i], "--debug") == 0) {
+            debug = true;
+            continue;
+        }
+        if (strncmp(argv[i], "-", 1) == 0 || strncmp(argv[i], "--", 2) == 0) {
+            errorf("Unrecognized command line option '%s'", argv[i]);
+            exit(EXIT_FAILURE);
+        }
+
+        if (path != NULL) {
+            errorf("More than one file provided");
+            exit(EXIT_FAILURE);
+        }
+        path = argv[i];
     }
 }
 
@@ -226,6 +240,9 @@ execute(void)
             }
             break;
         case '#':
+            if (!debug) {
+                continue;
+            }
             printf("%5s%-2s%-s\n", "CELL", "", "VALUE (dec|hex)");
             size_t const begin = cell_idx < 2 ? 0 : cell_idx - 2;
             size_t const end = begin + 10;
