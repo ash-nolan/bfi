@@ -211,14 +211,14 @@ execute(void)
             break;
         case '>':
             if (cell_idx == (CELL_COUNT - 1)) {
-                errorf("[line %zu] '>' Causes cell out of bounds", lines[pc]);
+                errorf("[line %zu] '>' causes cell out of bounds", lines[pc]);
                 return false;
             }
             cell_idx += 1;
             break;
         case '<':
             if (cell_idx == 0) {
-                errorf("[line %zu] '<' Causes cell out of bounds", lines[pc]);
+                errorf("[line %zu] '<' causes cell out of bounds", lines[pc]);
                 return false;
             }
             cell_idx -= 1;
