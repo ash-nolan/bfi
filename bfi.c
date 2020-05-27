@@ -225,6 +225,18 @@ execute(void)
                 cells[cell_idx] = (uint8_t)c;
             }
             break;
+        case '#':
+            printf("%5s %-s\n", "CELL", "VALUE");
+            size_t const begin = cell_idx < 2 ? 0 : cell_idx - 2;
+            size_t const end = begin + 10;
+            for (size_t i = begin; i < end; ++i) {
+                printf(
+                    "%05zu 0x%02X%s\n",
+                    i,
+                    (unsigned)cells[i],
+                    i == cell_idx ? " <" : "");
+            }
+            break;
         }
     }
 
