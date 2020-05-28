@@ -10,7 +10,7 @@
 
 #define CELL_COUNT 30000
 static uint8_t cells[CELL_COUNT] = {0};
-static size_t cell_idx = 0;
+static size_t cellptr = 0;
 
 static char const* path = NULL;
 static bool debug = false;
@@ -218,27 +218,27 @@ execute(void)
     for (size_t pc = 0; pc < source_size; ++pc) {
         switch (source[pc]) {
         case '+':
-            cells[cell_idx] += 1;
+            cells[cellptr] += 1;
             break;
         case '-':
-            cells[cell_idx] -= 1;
+            cells[cellptr] -= 1;
             break;
         case '>':
-            if (cell_idx == (CELL_COUNT - 1)) {
+            if (cellptr == (CELL_COUNT - 1)) {
                 errorf("[line %zu] '>' causes cell out of bounds", lines[pc]);
                 return false;
             }
-            cell_idx += 1;
+            cellptr += 1;
             break;
         case '<':
-            if (cell_idx == 0) {
+            if (cellptr == 0) {
                 errorf("[line %zu] '<' causes cell out of bounds", lines[pc]);
                 return false;
             }
-            cell_idx -= 1;
+            cellptr -= 1;
             break;
         case '[':
-            if (cells[cell_idx] == 0) {
+            if (cells[cellptr] == 0) {
                 pc = jumps[pc];
             }
             break;
@@ -246,11 +246,11 @@ execute(void)
             pc = jumps[pc] - 1;
             break;
         case '.':
-            fputc(cells[cell_idx], stdout);
+            fputc(cells[cellptr], stdout);
             break;
         case ',':
             if ((c = fgetc(stdin)) != EOF) {
-                cells[cell_idx] = (uint8_t)c;
+                cells[cellptr] = (uint8_t)c;
             }
             break;
         case '#':
@@ -258,11 +258,11 @@ execute(void)
                 continue;
             }
             printf("%5s%-2s%-s\n", "CELL", "", "VALUE (dec|hex)");
-            size_t const begin = cell_idx < 2 ? 0 : cell_idx - 2;
+            size_t const begin = cellptr < 2 ? 0 : cellptr - 2;
             size_t const end = begin + 10;
             for (size_t i = begin; i < end; ++i) {
                 unsigned const val = cells[i];
-                char const* const endln = i == cell_idx ? " <" : "";
+                char const* const endln = i == cellptr ? " <" : "";
                 printf("%05zu%-2s%03u|0x%02X%s\n", i, ":", val, val, endln);
             }
             break;
