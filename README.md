@@ -66,6 +66,7 @@ sys     0m0.000s
 + 30,000 cell tape
 + 8-bit wrapping cells
 + No cell update upon reading `EOF` with `,`
++ Debug instruction # is supported with the use of the `--debug` option
 
 ## Building
 ### POSIX c99
