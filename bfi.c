@@ -6,7 +6,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#define VERSION "0.1"
+#define VERSION "0.2"
 
 #define CELL_COUNT 30000
 static uint8_t cells[CELL_COUNT] = {0};
