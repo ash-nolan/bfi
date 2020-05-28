@@ -43,7 +43,7 @@ main(int argc, char** argv)
 {
     argcheck(argc, argv);
     xslurp(&source, &source_size, path);
-    int const status = prepare() && execute();
+    bool const status = prepare() && execute();
 
     free(source);
     free(lines);
@@ -114,7 +114,8 @@ usage(void)
 {
     // clang-format off
     puts(
-        "Usage: bfi FILE"                                            "\n"
+        "Usage: bfi [OPTION]... FILE"                                "\n"
+        "Options:"                                                   "\n"
         "  -h, --help       Display usage information and exit."     "\n"
         "      --version    Display version information and exit."   "\n"
         "      --debug      Enable the # instruction for debugging."
@@ -130,6 +131,8 @@ argcheck(int argc, char** argv)
         exit(EXIT_FAILURE);
     }
 
+    bool error_unrecognized_option = false;
+    bool error_multiple_files = false;
     for (int i = 1; i < argc; ++i) {
         if (strcmp(argv[i], "-h") == 0 || strcmp(argv[i], "--help") == 0) {
             usage();
@@ -146,14 +149,25 @@ argcheck(int argc, char** argv)
         }
         if (strncmp(argv[i], "-", 1) == 0 || strncmp(argv[i], "--", 2) == 0) {
             errorf("Unrecognized command line option '%s'", argv[i]);
-            exit(EXIT_FAILURE);
+            error_unrecognized_option = true;
+            continue;
         }
 
         if (path != NULL) {
-            errorf("More than one file provided");
-            exit(EXIT_FAILURE);
+            error_multiple_files = true;
+            continue;
         }
         path = argv[i];
+    }
+
+    if (error_multiple_files) {
+        errorf("More than one file provided");
+    }
+    if (error_unrecognized_option || error_multiple_files) {
+        // Error encountered during argument parsing.
+        // At this point all error message should have been displayed (int the
+        // correct order) so it is safe to exit.
+        exit(EXIT_FAILURE);
     }
 }
 
