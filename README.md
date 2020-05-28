@@ -90,4 +90,4 @@ assembled from well known Brainfuck resources across the web and are copyright
 their original authors unless otherwise noted.
 
 All other content in this repository is released into the public domain under
-the terms of BSD Zero Clause License (see COPYING).
+the terms of BSD Zero Clause License (see LICENSE).
