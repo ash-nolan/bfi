@@ -24,8 +24,6 @@ static void
 errorf(char const* fmt, ...);
 static void*
 xalloc(void* ptr, size_t size);
-static void*
-xallocz(void* ptr, size_t size);
 static void
 xslurp(unsigned char** out_buf, size_t* out_buf_size, char const* path);
 
@@ -74,12 +72,6 @@ xalloc(void* ptr, size_t size)
         exit(EXIT_FAILURE);
     }
     return ptr;
-}
-
-static void*
-xallocz(void* ptr, size_t size)
-{
-    return memset(xalloc(ptr, size), 0x00, size);
 }
 
 static void
@@ -179,10 +171,10 @@ prepare(void)
 {
     bool success = true;
 
-    lines = xallocz(NULL, source_size * sizeof(size_t));
-    jumps = xallocz(NULL, source_size * sizeof(size_t));
+    lines = xalloc(NULL, source_size * sizeof(size_t));
+    jumps = xalloc(NULL, source_size * sizeof(size_t));
 
-    size_t* const stack = xallocz(NULL, source_size * sizeof(size_t));
+    size_t* const stack = xalloc(NULL, source_size * sizeof(size_t));
     size_t stack_count = 0;
     size_t line = 1;
     for (size_t i = 0; i < source_size; ++i) {
