@@ -22,8 +22,6 @@ static size_t* jumps = NULL; // Jump indices for each [ and ] instruction.
 
 static void
 errorf(char const* fmt, ...);
-static void*
-xalloc(void* ptr, size_t size);
 static void
 xslurp(unsigned char** out_buf, size_t* out_buf_size, char const* path);
 
@@ -60,20 +58,6 @@ errorf(char const* fmt, ...)
     va_end(args);
 }
 
-static void*
-xalloc(void* ptr, size_t size)
-{
-    if (size == 0) {
-        free(ptr);
-        return NULL;
-    }
-    if ((ptr = realloc(ptr, size)) == NULL) {
-        errorf("Out of memory");
-        exit(EXIT_FAILURE);
-    }
-    return ptr;
-}
-
 static void
 xslurp(unsigned char** out_buf, size_t* out_buf_size, char const* path)
 {
@@ -88,7 +72,11 @@ xslurp(unsigned char** out_buf, size_t* out_buf_size, char const* path)
 
     int c;
     while ((c = fgetc(stream)) != EOF) {
-        buf = xalloc(buf, size + 1);
+        buf = realloc(buf, size + 1);
+        if (buf == NULL) {
+            errorf("Out of memory");
+            exit(EXIT_FAILURE);
+        }
         buf[size++] = (unsigned char)c;
     }
     if (!feof(stream) || ferror(stream)) {
@@ -171,11 +159,16 @@ prepare(void)
 {
     bool success = true;
 
-    lines = xalloc(NULL, source_size * sizeof(size_t));
-    jumps = xalloc(NULL, source_size * sizeof(size_t));
-
-    size_t* const stack = xalloc(NULL, source_size * sizeof(size_t));
+    lines = calloc(source_size, sizeof(size_t));
+    jumps = calloc(source_size, sizeof(size_t));
+    size_t* const stack = calloc(source_size, sizeof(size_t));
     size_t stack_count = 0;
+
+    if (lines == NULL || jumps == NULL || stack == NULL) {
+        errorf("Out of memory");
+        exit(EXIT_FAILURE);
+    }
+
     size_t line = 1;
     for (size_t i = 0; i < source_size; ++i) {
         lines[i] = line;
