@@ -17,8 +17,8 @@ static bool debug = false;
 
 static size_t source_size = 0;
 static unsigned char* source = NULL;
-static size_t* lines = NULL;
-static size_t* jumps = NULL;
+static size_t* lines = NULL; // Line numbers for each source byte.
+static size_t* jumps = NULL; // Jump indices for each [ and ] instruction.
 
 static void
 errorf(char const* fmt, ...);
