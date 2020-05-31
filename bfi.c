@@ -1,3 +1,4 @@
+#include <assert.h>
 #include <errno.h>
 #include <stdarg.h>
 #include <stdbool.h>
@@ -160,6 +161,7 @@ prepare(void)
 {
     bool success = true;
 
+    assert(source != NULL);
     lines = calloc(source_size, sizeof(size_t));
     jumps = calloc(source_size, sizeof(size_t));
     size_t* const stack = calloc(source_size, sizeof(size_t));
@@ -200,6 +202,10 @@ prepare(void)
 static bool
 execute(void)
 {
+    assert(source != NULL);
+    assert(lines != NULL);
+    assert(jumps != NULL);
+
     int c;
     for (size_t pc = 0; pc < source_size; ++pc) {
         switch (source[pc]) {
