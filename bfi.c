@@ -17,8 +17,8 @@ static bool debug = false;
 
 static size_t source_size = 0;
 static unsigned char* source = NULL;
-static size_t* lines = NULL; // Line numbers for each source byte.
-static size_t* jumps = NULL; // Jump indices for each [ and ] instruction.
+static size_t* lines = NULL; // <- Line numbers for each source byte.
+static size_t* jumps = NULL; // <- Jump indices for each [ and ] instruction.
 
 static void
 errorf(char const* fmt, ...);
@@ -151,9 +151,10 @@ argcheck(int argc, char** argv)
     }
 }
 
-//= Prepare and Process the Source Code:
-//  (1) Associate line numbers with each byte of the source.
-//  (2) Build the jump table for left and right square brackets.
+// Iterate over the source buffer and do the following:
+//  (1) Setup lines by associating line numbers with each source byte.
+//  (2) Setup jumps by pairing [ and ] instructions.
+//  (3) Detect unbalanced [ and ] instructions (invalid source code).
 static bool
 prepare(void)
 {
