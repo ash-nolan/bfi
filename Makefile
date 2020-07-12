@@ -11,6 +11,8 @@ CFLAGS = $(C99_REL)
 OBJS = bfi.o
 TARGET = bfi
 
+all: $(TARGET)
+
 $(TARGET): $(OBJS)
 	$(CC) -o $@ $(OBJS) $(CFLAGS)
 
