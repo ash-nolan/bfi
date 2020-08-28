@@ -146,7 +146,7 @@ argcheck(int argc, char** argv)
     }
     if (error_unrecognized_option || error_multiple_files) {
         // Error encountered during argument parsing.
-        // At this point all error message should have been displayed (int the
+        // At this point all error message should have been displayed (in the
         // correct order) so it is safe to exit.
         exit(EXIT_FAILURE);
     }
