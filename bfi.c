@@ -7,14 +7,11 @@
 #include <stdio.h>
 #include <string.h>
 
-#define VERSION "0.3"
-
 #define CELL_COUNT 30000
 static uint8_t cells[CELL_COUNT] = {0};
 static size_t cellptr = 0;
 
 static char const* path = NULL;
-static bool debug = false;
 
 static size_t source_size = 0;
 static unsigned char* source = NULL;
@@ -93,15 +90,7 @@ xslurp(unsigned char** out_buf, size_t* out_buf_size, char const* path)
 static void
 usage(void)
 {
-    // clang-format off
-    puts(
-        "Usage: bfi [OPTION]... FILE"                                "\n"
-        "Options:"                                                   "\n"
-        "  -h, --help       Display usage information and exit."     "\n"
-        "      --version    Display version information and exit."   "\n"
-        "      --debug      Enable the # instruction for debugging."
-    );
-    // clang-format on
+    puts("Usage: bfi FILE");
 }
 
 static void
@@ -112,43 +101,22 @@ argcheck(int argc, char** argv)
         exit(EXIT_FAILURE);
     }
 
-    bool error_unrecognized_option = false;
-    bool error_multiple_files = false;
     for (int i = 1; i < argc; ++i) {
         if (strcmp(argv[i], "-h") == 0 || strcmp(argv[i], "--help") == 0) {
             usage();
             exit(EXIT_SUCCESS);
         }
-        if (strcmp(argv[i], "--version") == 0) {
-            puts(VERSION);
-            exit(EXIT_SUCCESS);
-        }
 
-        if (strcmp(argv[i], "--debug") == 0) {
-            debug = true;
-            continue;
-        }
         if (strncmp(argv[i], "-", 1) == 0 || strncmp(argv[i], "--", 2) == 0) {
             errorf("Unrecognized command line option '%s'", argv[i]);
-            error_unrecognized_option = true;
-            continue;
+            exit(EXIT_FAILURE);
         }
 
         if (path != NULL) {
-            error_multiple_files = true;
-            continue;
+            errorf("More than one file provided");
+            exit(EXIT_FAILURE);
         }
         path = argv[i];
-    }
-
-    if (error_multiple_files) {
-        errorf("More than one file provided");
-    }
-    if (error_unrecognized_option || error_multiple_files) {
-        // Error encountered during argument parsing.
-        // At this point all error message should have been displayed (in the
-        // correct order) so it is safe to exit.
-        exit(EXIT_FAILURE);
     }
 }
 
@@ -243,19 +211,6 @@ execute(void)
         case ',':
             if ((c = fgetc(stdin)) != EOF) {
                 cells[cellptr] = (uint8_t)c;
-            }
-            break;
-        case '#':
-            if (!debug) {
-                continue;
-            }
-            printf("%5s%-2s%-s\n", "CELL", "", "VALUE (dec|hex)");
-            size_t const begin = cellptr < 2 ? 0 : cellptr - 2;
-            size_t const end = begin + 10;
-            for (size_t i = begin; i < end; ++i) {
-                unsigned const val = cells[i];
-                char const* const endln = i == cellptr ? " <" : "";
-                printf("%05zu%-2s%03u|0x%02X%s\n", i, ":", val, val, endln);
             }
             break;
         }
