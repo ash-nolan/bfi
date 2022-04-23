@@ -1,11 +1,3 @@
-[ BEGIN COMMENT FROM ASHN
-    bitwidth.b - the Brainfuck torture test written by GitHub user rdebath.
-    Taken from https://github.com/rdebath/Brainfuck/blob/master/bitwidth.b
-    on 2020-05-25.
-    User rdebath has explicitly released this program into the public domain.
-    See https://github.com/rdebath/Brainfuck#copyrights for more information.
-] END COMMENT FROM ASHN
-
 [
     This routine is a demonstration of checking for the three cell sizes
     that are normal for Brainfuck. The demo code also checks for bugs
