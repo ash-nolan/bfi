@@ -63,21 +63,20 @@ user    0m21.943s
 sys     0m0.000s
 ```
 ## Implementation Details
-+ 30,000 cell tape.
-+ 8-bit wrapping cells.
-+ No cell update upon reading `EOF` with `,`.
-+ Debug instruction # is supported with the use of the `--debug` option.
++ 30,000 cell tape
++ 8-bit wrapping cells
++ No cell update upon reading `EOF` with `,`
 
 ## Building
 ### POSIX c99
 ```sh
-$ make clean bfi
+$ make bfi
 ```
 
 ### GCC or Clang
 ```sh
-$ make clean bfi CC=gcc CFLAGS='-std=c99 -pedantic-errors -Os -DNDEBUG -Wall -Wextra'
-$ make clean bfi CC=clang CFLAGS='-std=c99 -pedantic-errors -Os -DNDEBUG -Wall -Wextra'
+$ make bfi CC=gcc CFLAGS='-std=c99 -pedantic-errors -Os -DNDEBUG -Wall -Wextra'
+$ make bfi CC=clang CFLAGS='-std=c99 -pedantic-errors -Os -DNDEBUG -Wall -Wextra'
 ```
 
 ## License
